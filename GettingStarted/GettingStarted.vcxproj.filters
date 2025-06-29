@@ -66,5 +66,28 @@
     <None Include="Progress\glsl\moveTriangleUsingUniform.vert" />
     <None Include="Progress\glsl\setColorUsingVertexPosition.frag" />
     <None Include="Progress\glsl\setColorUsingVertexPosition.vert" />
+    <None Include="Progress\glsl\tryTextureContainer.frag" />
+    <None Include="Progress\glsl\tryTextureContainer.vert" />
+    <None Include="Progress\glsl\doubleTexture.vert" />
+    <None Include="Progress\glsl\doubleTexture.frag" />
+    <None Include="Progress\glsl\onlyAwesomeFaceOtherDirection.vert" />
+    <None Include="Progress\glsl\onlyAwesomeFaceOtherDirection.frag" />
+    <None Include="Progress\glsl\experimentWithWrappingMethods.frag" />
+    <None Include="Progress\glsl\experimentWithWrappingMethods.vert" />
+    <None Include="Progress\glsl\displayOnlyCenterPixels.frag" />
+    <None Include="Progress\glsl\displayOnlyCenterPixels.vert" />
+    <None Include="Progress\glsl\controlMixUsingUpDownKeys.frag" />
+    <None Include="Progress\glsl\controlMixUsingUpDownKeys.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Progress\images\wall.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Progress\images\container.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Progress\images\awesomeface.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

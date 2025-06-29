@@ -1,6 +1,6 @@
 #pragma once
 #include "../global.h"
-#include "../Shader.h"
+
 class prog1
 {
 public:
@@ -16,6 +16,9 @@ public:
 	void mixColor();
 
 	void tryShaderClass();
+
+	void tryTextureContainer();
+	void doubleTexture();
 public: // exercises
 	void twoTriangle();
 	void twoTriangle2();
@@ -25,6 +28,11 @@ public: // exercises
 	void moveTriangleUsingUniform();
 	void setColorUsingVertexPosition();
 
+	void onlyAwesomeFaceOtherDirection();
+	void experimentWithWrappingMethods();
+	void displayOnlyCenterPixels();
+	void controlMixUsingUpDownKeys();
+	void controlMixUsingUpDownKeysInputs(GLFWwindow* window, float& mix, float scale);
 private:
 	void initGLFW();
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height);

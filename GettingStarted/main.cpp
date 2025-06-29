@@ -14,7 +14,11 @@ int main()
 	//p1.tryShaderClass();
 	//p1.triangleUpSideDown();
 	//p1.moveTriangleUsingUniform();
-	p1.setColorUsingVertexPosition();
-	
+	//p1.setColorUsingVertexPosition();
+	//p1.tryTextureContainer();
+	//p1.doubleTexture();
+	//p1.onlyAwesomeFaceOtherDirection();
+	//p1.experimentWithWrappingMethods();
+	p1.controlMixUsingUpDownKeys();
 	return 0;
 }
