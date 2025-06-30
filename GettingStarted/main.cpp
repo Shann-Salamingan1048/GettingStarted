@@ -19,6 +19,10 @@ int main()
 	//p1.doubleTexture();
 	//p1.onlyAwesomeFaceOtherDirection();
 	//p1.experimentWithWrappingMethods();
-	p1.controlMixUsingUpDownKeys();
+	//p1.controlMixUsingUpDownKeys();
+	//p1.tryGLM();
+	//p1.GLM_Rotate_Translate();
+	p1.GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation();
+
 	return 0;
 }

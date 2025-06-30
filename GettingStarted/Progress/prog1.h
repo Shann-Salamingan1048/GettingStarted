@@ -19,6 +19,8 @@ public:
 
 	void tryTextureContainer();
 	void doubleTexture();
+
+	void tryGLM();
 public: // exercises
 	void twoTriangle();
 	void twoTriangle2();
@@ -33,6 +35,9 @@ public: // exercises
 	void displayOnlyCenterPixels();
 	void controlMixUsingUpDownKeys();
 	void controlMixUsingUpDownKeysInputs(GLFWwindow* window, float& mix, float scale);
+
+	void GLM_Rotate_Translate();
+	void GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation();
 private:
 	void initGLFW();
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
