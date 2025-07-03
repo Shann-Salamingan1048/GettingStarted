@@ -36,6 +36,9 @@
     <ClCompile Include="Libraries\include\glm\glm.cppm">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\glad\glad.h">
@@ -926,6 +929,9 @@
     <ClInclude Include="Libraries\include\glm\vector_relational.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Progress\glsl\tryShaderClass.vert" />
@@ -1368,6 +1374,16 @@
     <None Include="Progress\glsl\GLM_Rotate_Translate.vert" />
     <None Include="Progress\glsl\GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation.frag" />
     <None Include="Progress\glsl\GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation.vert" />
+    <None Include="Progress\glsl\try3D.frag" />
+    <None Include="Progress\glsl\try3D.vert" />
+    <None Include="Progress\glsl\more3D.vert" />
+    <None Include="Progress\glsl\more3D.frag" />
+    <None Include="Progress\glsl\moreCubes.frag" />
+    <None Include="Progress\glsl\moreCubes.vert" />
+    <None Include="Progress\glsl\rotateEvery3rdCube.vert" />
+    <None Include="Progress\glsl\rotateEvery3rdCube.frag" />
+    <None Include="Progress\glsl\rotationalRingBox.frag" />
+    <None Include="Progress\glsl\rotationalRingBox.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Progress\images\wall.jpg">

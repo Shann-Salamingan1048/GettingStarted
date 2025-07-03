@@ -142,6 +142,7 @@
     <ClCompile Include="Progress\prog1.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb.cpp" />
+    <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Libraries\include\glad\glad.h" />
@@ -438,6 +439,7 @@
     <ClInclude Include="Libraries\include\KHR\khrplatform.h" />
     <ClInclude Include="Libraries\include\stb\stb_images.h" />
     <ClInclude Include="global.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="Progress\prog1.h" />
     <ClInclude Include="Shader.h" />
   </ItemGroup>
@@ -592,14 +594,24 @@
     <None Include="Progress\glsl\GLM_Rotate_Translate.vert" />
     <None Include="Progress\glsl\GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation.frag" />
     <None Include="Progress\glsl\GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation.vert" />
+    <None Include="Progress\glsl\more3D.frag" />
+    <None Include="Progress\glsl\more3D.vert" />
+    <None Include="Progress\glsl\moreCubes.frag" />
+    <None Include="Progress\glsl\moreCubes.vert" />
     <None Include="Progress\glsl\moveTriangleUsingUniform.frag" />
     <None Include="Progress\glsl\moveTriangleUsingUniform.vert" />
     <None Include="Progress\glsl\onlyAwesomeFaceOtherDirection.frag" />
     <None Include="Progress\glsl\onlyAwesomeFaceOtherDirection.vert" />
+    <None Include="Progress\glsl\rotateEvery3rdCube.frag" />
+    <None Include="Progress\glsl\rotateEvery3rdCube.vert" />
+    <None Include="Progress\glsl\rotationalRingBox.frag" />
+    <None Include="Progress\glsl\rotationalRingBox.vert" />
     <None Include="Progress\glsl\setColorUsingVertexPosition.frag" />
     <None Include="Progress\glsl\setColorUsingVertexPosition.vert" />
     <None Include="Progress\glsl\triangleUpSideDown.frag" />
     <None Include="Progress\glsl\triangleUpSideDown.vert" />
+    <None Include="Progress\glsl\try3D.frag" />
+    <None Include="Progress\glsl\try3D.vert" />
     <None Include="Progress\glsl\tryGLM.frag" />
     <None Include="Progress\glsl\tryGLM.vert" />
     <None Include="Progress\glsl\tryShaderClass.frag" />

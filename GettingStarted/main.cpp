@@ -22,7 +22,13 @@ int main()
 	//p1.controlMixUsingUpDownKeys();
 	//p1.tryGLM();
 	//p1.GLM_Rotate_Translate();
-	p1.GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation();
+	//p1.GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation();
+	//p1.try3D();
+	//p1.more3D();
+	//p1.moreCubes();
+	//p1.rotateEvery3rdCube();
+	p1.rotationalRingBox();
+
 
 	return 0;
 }

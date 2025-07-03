@@ -37,7 +37,7 @@ private:
 	unsigned int m_ID;
 
 private:
-	mutable std::unordered_map<std::string, GLint> m_uniformCache;
+	mutable std::unordered_map<std::string, GLuint> m_uniformCache;
 	GLint getUniformLocation(const std::string& name) const;
 private:
 	std::string readShaderFile(const char* filePath);

@@ -39,6 +39,925 @@ void prog1::processInput(GLFWwindow* window)
 		spacePressed = false;
 	}
 }
+void prog1::rotationalRingBox()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW widow");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,// face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,// face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 5
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	const glm::vec3 cubePositions[] =
+	{
+		glm::vec3(0.0f, 0.0f,  -5.0f),
+
+	};
+	Shader shader("Progress\\glsl\\rotationalRingBox.vert", "Progress\\glsl\\rotationalRingBox.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+
+	glBindVertexArray(vao);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+	// Load and create a Texture
+	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
+	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	//  set it manually like so:
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+	float z_limit_negative = -15.0f;
+	float z_limit_positive = 1.0f;
+	float z = 1.0f;
+	float z_add = 0.001f;
+
+	
+	float x = 0.0f;
+	float x_limit = 3.0f;
+	float x_add = 0.01f;
+
+	float y = 0.0f;
+	float y_limit = 3.0f;
+	float y_add = 0.01f;
+	while (!glfwWindowShouldClose(m_window))
+	{
+		// inpuit
+		processInput(m_window);
+
+		/// rendering commands
+		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer noew
+		///bind texture
+		texture1.Bind();
+		texture2.Bind();
+
+		// create transformation
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+
+		/*projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);*/
+
+		float fastForward = 2.0f;
+		uint8_t everyNth = 3;
+		glBindVertexArray(vao);
+		for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+		{
+			projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+			view = glm::translate(view, glm::vec3(sin(glfwGetTime()) + x, sin(glfwGetTime()) + y, sin(glfwGetTime()) + z));
+
+			shader.setMat4("view", view);
+			shader.setMat4("projection", projection);
+
+			model = glm::translate(model, cubePositions[i]);
+			float angle = (float)glfwGetTime() * fastForward + glm::radians(20.f * i);
+
+			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.setMat4("model", model);
+			//render container
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			model = glm::mat4(1.0f);
+		}
+		
+		if (z >= z_limit_positive || z <= z_limit_negative)
+		{
+			z_add = -z_add;
+		}
+		if (x >= x_limit || x <= -x_limit)
+		{
+			x_add = -x_add;
+		}
+		if (y >= y_limit || y <= -y_limit)
+		{
+			y_add = -y_add;
+		}
+		z += z_add;
+		x += x_add;
+		y += y_add;
+		// check and call events and swap the buffers
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	texture1.Delete();
+	texture2.Delete();
+	glfwTerminate();
+
+
+	return;
+}
+void prog1::rotateEvery3rdCube()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW widow");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,// face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,// face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 5
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	const glm::vec3 cubePositions[] =
+	{
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f),
+		glm::vec3(-2.0f, 2.0f, -1.5f)
+	};
+	Shader shader("Progress\\glsl\\rotateEvery3rdCube.vert", "Progress\\glsl\\rotateEvery3rdCube.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+
+	glBindVertexArray(vao);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+	// Load and create a Texture
+	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
+	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	//  set it manually like so:
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		// inpuit
+		processInput(m_window);
+
+		/// rendering commands
+		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer noew
+		///bind texture
+		texture1.Bind();
+		texture2.Bind();
+
+		// create transformation
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+
+		projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
+
+		float fastForward = 2.0f;
+		uint8_t everyNth = 3;
+		glBindVertexArray(vao);
+		for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+		{
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.f * i;
+			if (i % everyNth == 0)
+				angle = (float)glfwGetTime() * fastForward + glm::radians(angle);
+			model = glm::rotate(model, angle , glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.setMat4("model", model);
+			//render container
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			model = glm::mat4(1.0f);
+		}
+
+		// check and call events and swap the buffers
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	texture1.Delete();
+	texture2.Delete();
+	glfwTerminate();
+
+
+	return;
+}
+
+void prog1::moreCubes()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW widow");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,// face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,// face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 5
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	const glm::vec3 cubePositions[] = 
+	{
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f),
+		glm::vec3(-2.0f, 2.0f, -1.5f)
+	};
+	Shader shader("Progress\\glsl\\moreCubes.vert", "Progress\\glsl\\moreCubes.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+
+	glBindVertexArray(vao);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// Load and create a Texture
+	unsigned int texture, texture2;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	unsigned char* data = stbi_load(fullPath.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a jpg file then GL_RGB should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+	data = stbi_load(fullPath2.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a PNG file then GL_RGBA should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath2);
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	//  set it manually like so:
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		// inpuit
+		processInput(m_window);
+
+		/// rendering commands
+		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer noew
+		///bind texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		// create transformation
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+		
+		projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+		
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
+
+		float fastForward = 2.0f;
+		
+		glBindVertexArray(vao);
+		for(uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+		{ 
+			model = glm::translate(model, cubePositions[i]);
+			float angle = 20.f * i;
+			model = glm::rotate(model, (float)glfwGetTime() * fastForward +  glm::radians(angle) , glm::vec3(1.0f, 0.3f, 0.5f));
+			shader.setMat4("model", model);
+			//render container
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			model = glm::mat4(1.0f);
+		}
+
+		// check and call events and swap the buffers
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	glfwTerminate();
+
+
+	return;
+}
+
+void prog1::more3D()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW widow");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,// face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,// face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 5
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	Shader shader("Progress\\glsl\\more3D.vert", "Progress\\glsl\\more3D.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+
+	glBindVertexArray(vao);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// Load and create a Texture
+	unsigned int texture, texture2;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	unsigned char* data = stbi_load(fullPath.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a jpg file then GL_RGB should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+	data = stbi_load(fullPath2.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a PNG file then GL_RGBA should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath2);
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	//  set it manually like so:
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		// inpuit
+		processInput(m_window);
+
+		/// rendering commands
+		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer noew
+		///bind texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		float fastForward = 2.0f;
+		// create transformation
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+
+		model = glm::rotate(model, (float)glfwGetTime() * fastForward , glm::vec3(cos(glfwGetTime()), sin(glfwGetTime()), 0.0f));
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+
+		shader.setMat4("model", model);
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
+
+
+		//render container
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// check and call events and swap the buffers
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	glfwTerminate();
+
+
+	return;
+}
+
+void prog1::try3D()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW widow");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+
+	float vertices[] = {
+		// positions          // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
+		 0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
+		-0.5f,  0.5f, 0.0f,   0.0f, 1.0f  // top left 
+	};
+	unsigned int indices[] = {
+		0, 1, 3, // first triangle
+		1, 2, 3  // second triangle
+	};
+	Shader shader("Progress\\glsl\\try3D.vert", "Progress\\glsl\\try3D.frag");
+
+	unsigned int vbo, vao, ebo;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &ebo);
+
+	glBindVertexArray(vao);
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// Load and create a Texture
+	unsigned int texture, texture2;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// load image, create texture and generate mipmaps
+	int width, height, nrChannels;
+	stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	unsigned char* data = stbi_load(fullPath.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a jpg file then GL_RGB should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);  // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+	data = stbi_load(fullPath2.c_str(), &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		// since it is a PNG file then GL_RGBA should be used
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::println("Failed to load texture");
+	}
+	stbi_image_free(data);
+	std::println("{}", fullPath2);
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	// -------------------------------------------------------------------------------------------
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	//  set it manually like so:
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		// inpuit
+		processInput(m_window);
+
+		/// rendering commands
+		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		///bind texture
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		// create transformation
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::mat4(1.0f);
+		glm::mat4 projection = glm::mat4(1.0f);
+		
+		model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+		projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
+
+		shader.setMat4("model", model);
+		shader.setMat4("view", view);
+		shader.setMat4("projection", projection);
+
+
+		//render container
+		glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+		// check and call events and swap the buffers
+		glfwSwapBuffers(m_window);
+		glfwPollEvents();
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
+	shader.deleteShader();
+	glfwTerminate();
+
+
+	return;
+}
 void prog1::GLM_tryDrawingSecondContainerPlaceItDifferentPositionUsingTransformation()
 {
 	if (m_window == nullptr)
