@@ -1384,6 +1384,12 @@
     <None Include="Progress\glsl\rotateEvery3rdCube.frag" />
     <None Include="Progress\glsl\rotationalRingBox.frag" />
     <None Include="Progress\glsl\rotationalRingBox.vert" />
+    <None Include="Progress\glsl\tryCam.frag" />
+    <None Include="Progress\glsl\tryCam.vert" />
+    <None Include="Progress\glsl\camWithController.vert" />
+    <None Include="Progress\glsl\camWithController.frag" />
+    <None Include="Progress\glsl\camUsingMouse.vert" />
+    <None Include="Progress\glsl\camUsingMouse.frag" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Progress\images\wall.jpg">

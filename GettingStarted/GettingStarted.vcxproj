@@ -582,6 +582,10 @@
     <None Include="Libraries\include\glm\gtx\vector_angle.inl" />
     <None Include="Libraries\include\glm\gtx\vector_query.inl" />
     <None Include="Libraries\include\glm\gtx\wrap.inl" />
+    <None Include="Progress\glsl\camUsingMouse.frag" />
+    <None Include="Progress\glsl\camUsingMouse.vert" />
+    <None Include="Progress\glsl\camWithController.frag" />
+    <None Include="Progress\glsl\camWithController.vert" />
     <None Include="Progress\glsl\controlMixUsingUpDownKeys.frag" />
     <None Include="Progress\glsl\controlMixUsingUpDownKeys.vert" />
     <None Include="Progress\glsl\displayOnlyCenterPixels.frag" />
@@ -612,6 +616,8 @@
     <None Include="Progress\glsl\triangleUpSideDown.vert" />
     <None Include="Progress\glsl\try3D.frag" />
     <None Include="Progress\glsl\try3D.vert" />
+    <None Include="Progress\glsl\tryCam.frag" />
+    <None Include="Progress\glsl\tryCam.vert" />
     <None Include="Progress\glsl\tryGLM.frag" />
     <None Include="Progress\glsl\tryGLM.vert" />
     <None Include="Progress\glsl\tryShaderClass.frag" />

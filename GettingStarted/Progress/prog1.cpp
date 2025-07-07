@@ -11,7 +11,19 @@ prog1::prog1(int width, int height, const char* title) : m_window(nullptr),
 	m_window = glfwCreateWindow(m_width, m_height, title, nullptr, nullptr);
 	
 }
-void prog1::framebuffer_size_callback(GLFWwindow* window, int width, int height)
+void prog1::printMat4(const glm::mat4& mat, const std::string& name) const
+{
+	std::print("{}: \n", name);
+	for (uint8_t i = 0; i < 4; ++i)
+	{
+		for (uint8_t j = 0; j < 4; ++j)
+		{
+			std::print("{} ", mat[i][j]);
+		}
+		std::println();
+	}
+}
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
 }
@@ -22,6 +34,252 @@ void prog1::initGLFW()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 }
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	lastX = xpos;
+	lastY = ypos;
+
+	float sensitivity = 0.1f; // change this value to your liking
+	xoffset *= sensitivity;
+	yoffset *= sensitivity;
+
+	yaw += xoffset;
+	pitch += yoffset;
+
+	// make sure that when pitch is out of bounds, screen doesn't get flipped
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	glm::vec3 front;
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	cameraFront = glm::normalize(front);
+}
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	fov -= (float)yoffset;
+	if (fov < 1.0f)
+		fov = 1.0f;
+	if (fov > 45.0f)
+		fov = 45.0f;
+}
+void prog1::camUsingMouseProcessInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	float cameraSpeed = static_cast<float>(4.5 * deltaTimeCam);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+void prog1::camUsingMouse()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW window");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	glfwSetCursorPosCallback(m_window, mouse_callback);
+	glfwSetScrollCallback(m_window,scroll_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 6
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	// world space positions of our cubes
+	const glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
+	Shader shader("Progress\\glsl\\camUsingMouse.vert", "Progress\\glsl\\camUsingMouse.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+
+	// Load and create a Texture
+	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
+	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+
+
+
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+	lastTime = std::chrono::high_resolution_clock::now();
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		double deltaTime = std::chrono::duration<double>(currentTime - lastTime).count();
+		if (deltaTime >= frameTime)
+		{
+			float currentFrame = static_cast<float>(glfwGetTime());
+			deltaTimeCam = currentFrame - lastFrame;
+			lastFrame = currentFrame;
+			// input
+			camUsingMouseProcessInput(m_window);
+
+			// rendering commands
+			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now
+
+			// bind texture
+			texture1.Bind();
+			texture2.Bind();
+
+			shader.use();
+
+			glm::mat4 projection = glm::perspective(glm::radians(fov), (float)m_width / (float)m_height, 0.1f, 100.0f);
+			shader.setMat4("projection", projection);
+			// create transformation
+			glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+			shader.setMat4("view", view);
+
+
+			glBindVertexArray(vao);
+			for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+			{
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, cubePositions[i]);
+				float angle = 20.0f * i;
+				model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+				shader.setMat4("model", model);
+				// render container
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+			// check and call events and swap the buffers
+			glfwSwapBuffers(m_window);
+			glfwPollEvents();
+
+			lastTime = currentTime;
+		}
+		else
+		{
+			auto sleepTime = std::chrono::duration<double>(frameTime - deltaTime);
+			std::this_thread::sleep_for(sleepTime);
+		}
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	texture1.Delete();
+	texture2.Delete();
+	glfwTerminate();
+
+	return;
+}
+
+
+
+
+
+
+
 void prog1::processInput(GLFWwindow* window)
 {
 	static bool spacePressed = false;
@@ -39,11 +297,26 @@ void prog1::processInput(GLFWwindow* window)
 		spacePressed = false;
 	}
 }
-void prog1::rotationalRingBox()
+void prog1::camWithControllerProcessInput(GLFWwindow* window)
+{
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
+
+	float cameraSpeed = static_cast<float>(2.5 * deltaTimeCam);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		cameraPos += cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		cameraPos -= cameraSpeed * cameraFront;
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}
+void prog1::camWithController()
 {
 	if (m_window == nullptr)
 	{
-		std::println("Failed to create GLFW widow");
+		std::println("Failed to create GLFW window");
 		glfwTerminate();
 		return;
 	}
@@ -67,13 +340,13 @@ void prog1::rotationalRingBox()
 		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
 
 		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,// face 2
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // face 2
 		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
 		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
 		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
 		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,// face 3
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // face 3
 		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
 		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
@@ -81,7 +354,7 @@ void prog1::rotationalRingBox()
 		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
 		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 4
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 4
 		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
@@ -95,26 +368,34 @@ void prog1::rotationalRingBox()
 		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,// face 5
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 6
 		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
-	const glm::vec3 cubePositions[] =
-	{
-		glm::vec3(0.0f, 0.0f,  -5.0f),
 
+	// world space positions of our cubes
+	const glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
-	Shader shader("Progress\\glsl\\rotationalRingBox.vert", "Progress\\glsl\\rotationalRingBox.frag");
+
+	Shader shader("Progress\\glsl\\camWithController.vert", "Progress\\glsl\\camWithController.frag");
 
 	unsigned int vbo, vao;
 	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
 
-
 	glBindVertexArray(vao);
-
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -126,96 +407,77 @@ void prog1::rotationalRingBox()
 	// for Tex Coord
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
 	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
 	std::string texPath = "\\GettingStarted\\Progress\\images\\";
 	std::string fullPath = parentDir + texPath + "container.jpg";
 	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+
 	// Load and create a Texture
 	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
 	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+
+
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
-	// -------------------------------------------------------------------------------------------
 	shader.use(); // don't forget to activate/use the shader before setting uniforms!
-	//  set it manually like so:
 	shader.setInt("texture1", 0);
 	shader.setInt("texture2", 1);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
+	shader.setMat4("projection", projection);
 
-	float z_limit_negative = -15.0f;
-	float z_limit_positive = 1.0f;
-	float z = 1.0f;
-	float z_add = 0.001f;
+	lastTime = std::chrono::high_resolution_clock::now();
 
-	
-	float x = 0.0f;
-	float x_limit = 3.0f;
-	float x_add = 0.01f;
-
-	float y = 0.0f;
-	float y_limit = 3.0f;
-	float y_add = 0.01f;
 	while (!glfwWindowShouldClose(m_window))
 	{
-		// inpuit
-		processInput(m_window);
-
-		/// rendering commands
-		glClearColor(0.2f, 0.3f, 0.3, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer noew
-		///bind texture
-		texture1.Bind();
-		texture2.Bind();
-
-		// create transformation
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::mat4(1.0f);
-		glm::mat4 projection = glm::mat4(1.0f);
-
-
-		/*projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
-		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-
-		shader.setMat4("view", view);
-		shader.setMat4("projection", projection);*/
-
-		float fastForward = 2.0f;
-		uint8_t everyNth = 3;
-		glBindVertexArray(vao);
-		for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		double deltaTime = std::chrono::duration<double>(currentTime - lastTime).count();
+		if (deltaTime >= frameTime)
 		{
-			projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.f);
-			view = glm::translate(view, glm::vec3(sin(glfwGetTime()) + x, sin(glfwGetTime()) + y, sin(glfwGetTime()) + z));
+			float currentFrame = static_cast<float>(glfwGetTime());
+			deltaTimeCam = currentFrame - lastFrame;
+			lastFrame = currentFrame;
+			// input
+			camWithControllerProcessInput(m_window);
 
+			// rendering commands
+			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now
+
+			// bind texture
+			texture1.Bind();
+			texture2.Bind();
+
+			shader.use();
+
+			// create transformation
+			glm::mat4 view = glm::mat4(1.0f);
+			view = glm::lookAt(cameraPos,cameraPos + cameraFront, cameraUp);
 			shader.setMat4("view", view);
-			shader.setMat4("projection", projection);
 
-			model = glm::translate(model, cubePositions[i]);
-			float angle = (float)glfwGetTime() * fastForward + glm::radians(20.f * i);
 
-			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
-			shader.setMat4("model", model);
-			//render container
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			model = glm::mat4(1.0f);
+			glBindVertexArray(vao);
+			for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+			{
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, cubePositions[i]);
+				float angle = 20.0f * i;
+				model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+				shader.setMat4("model", model);
+				// render container
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+			// check and call events and swap the buffers
+			glfwSwapBuffers(m_window);
+			glfwPollEvents();
+
+			lastTime = currentTime;
 		}
-		
-		if (z >= z_limit_positive || z <= z_limit_negative)
+		else
 		{
-			z_add = -z_add;
+			auto sleepTime = std::chrono::duration<double>(frameTime - deltaTime);
+			std::this_thread::sleep_for(sleepTime);
 		}
-		if (x >= x_limit || x <= -x_limit)
-		{
-			x_add = -x_add;
-		}
-		if (y >= y_limit || y <= -y_limit)
-		{
-			y_add = -y_add;
-		}
-		z += z_add;
-		x += x_add;
-		y += y_add;
-		// check and call events and swap the buffers
-		glfwSwapBuffers(m_window);
-		glfwPollEvents();
 	}
 
 	glDeleteVertexArrays(1, &vao);
@@ -225,6 +487,364 @@ void prog1::rotationalRingBox()
 	texture2.Delete();
 	glfwTerminate();
 
+	return;
+}
+
+
+
+void prog1::tryCam()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW window");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 6
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	// world space positions of our cubes
+	const glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
+
+	Shader shader("Progress\\glsl\\tryCam.vert", "Progress\\glsl\\tryCam.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+
+	// Load and create a Texture
+	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
+	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
+	shader.setMat4("projection", projection);
+	
+	lastTime = std::chrono::high_resolution_clock::now();
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		double deltaTime = std::chrono::duration<double>(currentTime - lastTime).count();
+		if (deltaTime >= frameTime)
+		{
+			// input
+			processInput(m_window);
+
+			// rendering commands
+			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now
+
+			// bind texture
+			texture1.Bind();
+			texture2.Bind();
+
+			shader.use();
+
+			// create transformation
+			glm::mat4 view = glm::mat4(1.0f);
+			float radius = 10.0f;
+			float camX = static_cast<float>(sin(glfwGetTime()) * radius);
+			float camZ = static_cast<float>(cos(glfwGetTime()) * radius);
+			view = glm::lookAt(glm::vec3(camX, 0.0f,camZ), glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f));
+			shader.setMat4("view", view);
+
+
+			glBindVertexArray(vao);
+			for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+			{
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, cubePositions[i]);
+				float angle = 20.0f * i;
+				model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+				//model = glm::rotate(model, (float)sin(glfwGetTime()), glm::vec3(1.0f, 0.3f, 0.5f));
+				shader.setMat4("model", model);
+				// render container
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+			// check and call events and swap the buffers
+			glfwSwapBuffers(m_window);
+			glfwPollEvents();
+
+			lastTime = currentTime;
+		}
+		else
+		{
+			auto sleepTime = std::chrono::duration<double>(frameTime - deltaTime);
+			std::this_thread::sleep_for(sleepTime);
+		}
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	texture1.Delete();
+	texture2.Delete();
+	glfwTerminate();
+
+	return;
+}
+void prog1::rotationalRingBox()
+{
+	if (m_window == nullptr)
+	{
+		std::println("Failed to create GLFW window");
+		glfwTerminate();
+		return;
+	}
+
+	glfwMakeContextCurrent(m_window);
+	glfwSetFramebufferSizeCallback(m_window, framebuffer_size_callback);
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::println("Failed to initialize GLAD");
+		return;
+	}
+	// configure global opengl state
+	glEnable(GL_DEPTH_TEST);
+
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f, // face 1
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f, // face 2
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f, // face 3
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 4
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f, // face 5
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f, // face 6
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	const glm::vec3 cubePositions[] =
+	{
+		glm::vec3(0.0f, 0.0f, -13.0f),
+		glm::vec3(0.0f, 0.0f, -13.0f),
+	};
+
+	Shader shader("Progress\\glsl\\rotationalRingBox.vert", "Progress\\glsl\\rotationalRingBox.frag");
+
+	unsigned int vbo, vao;
+	glGenVertexArrays(1, &vao);
+	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// Positions
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// for Tex Coord
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	std::string parentDir = (fs::current_path().fs::path::parent_path()).string();
+	std::string texPath = "\\GettingStarted\\Progress\\images\\";
+	std::string fullPath = parentDir + texPath + "container.jpg";
+	std::string fullPath2 = parentDir + texPath + "awesomeface.png";
+
+	// Load and create a Texture
+	Texture texture1(fullPath.c_str(), GL_TEXTURE_2D, GL_TEXTURE0, GL_UNSIGNED_BYTE);
+	Texture texture2(fullPath2.c_str(), GL_TEXTURE_2D, GL_TEXTURE1, GL_UNSIGNED_BYTE);
+
+	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
+	shader.use(); // don't forget to activate/use the shader before setting uniforms!
+	shader.setInt("texture1", 0);
+	shader.setInt("texture2", 1);
+
+	float currTimeOrbit = 0.0f;
+	const float orbitalPeriod = 10.0f; // Reduced from 365.25f for visible movement
+	const float earthDistance = 5.0f;
+	const float rotationSpeed = 5.0f; // Increased for more visible rotation
+	lastTime = std::chrono::high_resolution_clock::now();
+
+	while (!glfwWindowShouldClose(m_window))
+	{
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		double deltaTime = std::chrono::duration<double>(currentTime - lastTime).count();
+		if (deltaTime >= frameTime)
+		{
+			// input
+			processInput(m_window);
+
+			// rendering commands
+			glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // also clear the depth buffer now
+
+			// bind texture
+			texture1.Bind();
+			texture2.Bind();
+
+			currTimeOrbit += (float)deltaTime; // Use actual delta time instead of fixed 0.016f
+			float angle = (currTimeOrbit / orbitalPeriod) * 2.0f * 3.14159f;
+			float x = earthDistance * cos(angle);
+			float y = 2.0f * sin(angle * 2.0f);
+			float z = earthDistance * sin(angle);
+			float rotationAngle = currTimeOrbit * rotationSpeed;
+
+			// create transformation
+			glm::mat4 view = glm::mat4(1.0f);
+			glm::mat4 projection = glm::mat4(1.0f);
+
+			projection = glm::perspective(glm::radians(45.0f), (float)m_width / (float)m_height, 0.1f, 100.0f);
+			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+			shader.setMat4("view", view);
+			shader.setMat4("projection", projection);
+
+			glBindVertexArray(vao);
+			for (uint32_t i = 0; i < sizeof(cubePositions) / sizeof(cubePositions[0]); ++i)
+			{
+				glm::mat4 model = glm::mat4(1.0f);
+				if(i != 0)
+					model = glm::translate(model, glm::vec3(cubePositions[i].x + x, cubePositions[i].y + y, cubePositions[i].z + z));
+				else
+					model = glm::translate(model, cubePositions[i]);
+
+				model = glm::rotate(model, rotationAngle, glm::vec3(1.0f, 0.3f, 0.5f));
+
+				shader.setMat4("model", model);
+				// render container
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			}
+
+			// check and call events and swap the buffers
+			glfwSwapBuffers(m_window);
+			glfwPollEvents();
+
+			lastTime = currentTime;
+		}
+		else
+		{
+			auto sleepTime = std::chrono::duration<double>(frameTime - deltaTime);
+			std::this_thread::sleep_for(sleepTime);
+		}
+	}
+
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	shader.deleteShader();
+	texture1.Delete();
+	texture2.Delete();
+	glfwTerminate();
 
 	return;
 }
@@ -394,7 +1014,6 @@ void prog1::rotateEvery3rdCube()
 
 	return;
 }
-
 void prog1::moreCubes()
 {
 	if (m_window == nullptr)
@@ -607,7 +1226,6 @@ void prog1::moreCubes()
 
 	return;
 }
-
 void prog1::more3D()
 {
 	if (m_window == nullptr)
@@ -799,7 +1417,6 @@ void prog1::more3D()
 
 	return;
 }
-
 void prog1::try3D()
 {
 	if (m_window == nullptr)
@@ -1447,7 +2064,6 @@ void prog1::tryGLM()
 
 	return;
 }
-
 void prog1::controlMixUsingUpDownKeysInputs(GLFWwindow* window, float& mix, float scale)
 {
 	static bool spacePressed = false;
@@ -1656,7 +2272,6 @@ void prog1::controlMixUsingUpDownKeys()
 
 	return;
 }
-
 void prog1::displayOnlyCenterPixels()
 {
 	if (m_window == nullptr)

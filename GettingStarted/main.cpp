@@ -27,8 +27,10 @@ int main()
 	//p1.more3D();
 	//p1.moreCubes();
 	//p1.rotateEvery3rdCube();
-	p1.rotationalRingBox();
-
+	//p1.rotationalRingBox();
+	//p1.tryCam();
+	//p1.camWithController();
+	p1.camUsingMouse();
 
 	return 0;
 }
